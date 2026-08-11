@@ -497,8 +497,3 @@ git push origin feature/my-awesome-feature
 *License information coming soon.*
 
 ---
-
-
-
-
-One thing I'd strongly consider next is creating a **really good README header** with a screenshot of the game, a short one-line description, and badges for the tech stack/build status. That would make the GitHub landing page feel much more like a finished game project.
