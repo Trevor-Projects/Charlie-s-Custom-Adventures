@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+/* 3D Perspective and Transform Preserves */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* 3D Dice Rolling Animation Sequence */
+@keyframes diceTumble3D {
+  0% {
+    transform: translateY(-80px) translateZ(80px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.85);
+  }
+  15% {
+    transform: translateY(-120px) translateZ(140px) rotateX(240deg) rotateY(180deg) rotateZ(120deg) scale(1.15);
+  }
+  30% {
+    transform: translateY(-60px) translateZ(100px) rotateX(540deg) rotateY(420deg) rotateZ(300deg) scale(1.1);
+  }
+  50% {
+    transform: translateY(-20px) translateZ(60px) rotateX(900deg) rotateY(720deg) rotateZ(540deg) scale(1.05);
+  }
+  70% {
+    transform: translateY(15px) translateZ(20px) rotateX(1260deg) rotateY(1000deg) rotateZ(760deg) scale(0.98);
+  }
+  85% {
+    transform: translateY(-8px) translateZ(10px) rotateX(1380deg) rotateY(1070deg) rotateZ(820deg) scale(1.02);
+  }
+  93% {
+    transform: translateY(2px) translateZ(0px) rotateX(1420deg) rotateY(1080deg) rotateZ(835deg) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) translateZ(0) rotateX(1440deg) rotateY(1080deg) rotateZ(840deg) scale(1);
+  }
+}
+
+@keyframes diceTumbleSecondary3D {
+  0% {
+    transform: translateY(-70px) translateZ(70px) rotateX(30deg) rotateY(-40deg) rotateZ(20deg) scale(0.85);
+  }
+  20% {
+    transform: translateY(-110px) translateZ(130px) rotateX(-220deg) rotateY(280deg) rotateZ(-160deg) scale(1.12);
+  }
+  40% {
+    transform: translateY(-50px) translateZ(90px) rotateX(-480deg) rotateY(520deg) rotateZ(-340deg) scale(1.08);
+  }
+  65% {
+    transform: translateY(10px) translateZ(30px) rotateX(-800deg) rotateY(780deg) rotateZ(-520deg) scale(0.97);
+  }
+  82% {
+    transform: translateY(-6px) translateZ(10px) rotateX(-980deg) rotateY(860deg) rotateZ(-580deg) scale(1.01);
+  }
+  92% {
+    transform: translateY(2px) translateZ(0px) rotateX(-1060deg) rotateY(890deg) rotateZ(-595deg) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) translateZ(0) rotateX(-1080deg) rotateY(900deg) rotateZ(-600deg) scale(1);
+  }
+}
+
+/* Tray Impact Ripple Animation */
+@keyframes trayShockwave {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Critical Hit Particle Star Burst */
+@keyframes critRadiance {
+  0% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.25) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0.9;
+  }
+}
+
+/* Floating Arcane Sparkles */
+@keyframes sparkFloat {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Shimmer Specular Highlight */
+@keyframes facetSheen {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-dice-roll {
+  animation: diceTumble3D 1.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-dice-roll-secondary {
+  animation: diceTumbleSecondary3D 1.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-shockwave {
+  animation: trayShockwave 0.8s ease-out forwards;
+}
+
+.animate-crit-radiance {
+  animation: critRadiance 2s ease-in-out infinite alternate;
+}
+
+.animate-spark {
+  animation: sparkFloat 1.2s ease-out infinite;
+}
+
+.sheen-glow {
+  background-size: 200% auto;
+  animation: facetSheen 3s linear infinite;
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtlePulse 2.5s ease-in-out infinite;
+}
+

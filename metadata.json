@@ -1,0 +1,6 @@
+{
+  "name": "D&D 5E Mythic Quest Generator",
+  "description": "A 1 to 4 player interactive D&D 5th Edition campaign generator powered by Gemini AI with AI-generated visual world map cartography, Wikipedia historical lore, ambient soundscapes, and chronicle summaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
