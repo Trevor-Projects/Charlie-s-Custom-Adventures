@@ -1,68 +1,200 @@
 import { CharacterClass, Race, Gender } from '../types';
-import fighterPortrait from '../assets/images/fighter_portrait_1786405685026.jpg';
-import wizardPortrait from '../assets/images/wizard_portrait_1786405696063.jpg';
-import roguePortrait from '../assets/images/rogue_portrait_1786405706145.jpg';
+
+// Generic Clean Fantasy Character Artwork (Male & Female)
+import fighterMalePortrait from '../assets/images/fighter_male_portrait_1786914888274.jpg';
+import fighterFemalePortrait from '../assets/images/fighter_female_portrait_1786914901953.jpg';
+import wizardMalePortrait from '../assets/images/wizard_male_portrait_1786914915756.jpg';
+import wizardFemalePortrait from '../assets/images/wizard_female_portrait_1786914927439.jpg';
+import rogueMalePortrait from '../assets/images/rogue_male_portrait_1786914941528.jpg';
+import rogueFemalePortrait from '../assets/images/rogue_female_portrait_1786914955235.jpg';
+import clericMalePortrait from '../assets/images/cleric_male_portrait_1786914968723.jpg';
+import clericFemalePortrait from '../assets/images/cleric_female_portrait_1786914981005.jpg';
+import druidMalePortrait from '../assets/images/druid_male_portrait_1786914997400.jpg';
+import druidFemalePortrait from '../assets/images/druid_female_portrait_1786915012867.jpg';
+import warlockMalePortrait from '../assets/images/warlock_male_portrait_1786915025462.jpg';
+import warlockFemalePortrait from '../assets/images/warlock_female_portrait_1786915038988.jpg';
+import barbarianMalePortrait from '../assets/images/barbarian_male_portrait_1786915052252.jpg';
+import barbarianFemalePortrait from '../assets/images/barbarian_female_portrait_1786915065637.jpg';
+import bardMalePortrait from '../assets/images/bard_male_portrait_1786915078485.jpg';
+import bardFemalePortrait from '../assets/images/bard_female_portrait_1786915092449.jpg';
+import adventurerMalePortrait from '../assets/images/adventurer_male_portrait_1786915106514.jpg';
+import adventurerFemalePortrait from '../assets/images/adventurer_female_portrait_1786915120059.jpg';
 
 export interface PresetPortraitOption {
   id: string;
   label: string;
   url: string;
-  category: string;
+  category: 'Martial' | 'Arcane' | 'Divine' | 'Stealth' | 'Nature' | 'Adventurer';
+  gender: 'male' | 'female';
+  classMatch?: CharacterClass | 'Adventurer';
 }
 
 export const PRESET_PORTRAITS: PresetPortraitOption[] = [
+  // Fighter
   {
-    id: 'fighter-gen',
-    label: 'Heroic Fighter / Paladin',
-    url: fighterPortrait,
+    id: 'fighter-male',
+    label: 'Fighter (Male)',
+    url: fighterMalePortrait,
     category: 'Martial',
+    gender: 'male',
+    classMatch: 'Fighter',
   },
   {
-    id: 'wizard-gen',
-    label: 'Arcane Wizard / Sorcerer',
-    url: wizardPortrait,
+    id: 'fighter-female',
+    label: 'Fighter (Female)',
+    url: fighterFemalePortrait,
+    category: 'Martial',
+    gender: 'female',
+    classMatch: 'Fighter',
+  },
+
+  // Wizard
+  {
+    id: 'wizard-male',
+    label: 'Wizard (Male)',
+    url: wizardMalePortrait,
     category: 'Arcane',
+    gender: 'male',
+    classMatch: 'Wizard',
   },
   {
-    id: 'rogue-gen',
-    label: 'Shadow Rogue / Ranger',
-    url: roguePortrait,
+    id: 'wizard-female',
+    label: 'Wizard (Female)',
+    url: wizardFemalePortrait,
+    category: 'Arcane',
+    gender: 'female',
+    classMatch: 'Wizard',
+  },
+
+  // Rogue
+  {
+    id: 'rogue-male',
+    label: 'Rogue (Male)',
+    url: rogueMalePortrait,
     category: 'Stealth',
+    gender: 'male',
+    classMatch: 'Rogue',
   },
   {
-    id: 'cleric-divine',
-    label: 'Divine Cleric / Paladin',
-    url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=512&auto=format&fit=crop&q=80',
+    id: 'rogue-female',
+    label: 'Rogue (Female)',
+    url: rogueFemalePortrait,
+    category: 'Stealth',
+    gender: 'female',
+    classMatch: 'Rogue',
+  },
+
+  // Cleric
+  {
+    id: 'cleric-male',
+    label: 'Cleric (Male)',
+    url: clericMalePortrait,
     category: 'Divine',
+    gender: 'male',
+    classMatch: 'Cleric',
   },
   {
-    id: 'druid-nature',
-    label: 'Wild Druid / Ranger',
-    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=512&auto=format&fit=crop&q=80',
+    id: 'cleric-female',
+    label: 'Cleric (Female)',
+    url: clericFemalePortrait,
+    category: 'Divine',
+    gender: 'female',
+    classMatch: 'Cleric',
+  },
+
+  // Druid
+  {
+    id: 'druid-male',
+    label: 'Druid (Male)',
+    url: druidMalePortrait,
     category: 'Nature',
+    gender: 'male',
+    classMatch: 'Druid',
   },
   {
-    id: 'warlock-dark',
-    label: 'Eldritch Warlock / Tiefling',
-    url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=512&auto=format&fit=crop&q=80',
-    category: 'Eldritch',
+    id: 'druid-female',
+    label: 'Druid (Female)',
+    url: druidFemalePortrait,
+    category: 'Nature',
+    gender: 'female',
+    classMatch: 'Druid',
   },
+
+  // Warlock
   {
-    id: 'barbarian-rage',
-    label: 'Fierce Barbarian / Half-Orc',
-    url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=512&auto=format&fit=crop&q=80',
-    category: 'Martial',
-  },
-  {
-    id: 'bard-mystic',
-    label: 'Charismatic Bard / Gnome',
-    url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=512&auto=format&fit=crop&q=80',
+    id: 'warlock-male',
+    label: 'Warlock (Male)',
+    url: warlockMalePortrait,
     category: 'Arcane',
+    gender: 'male',
+    classMatch: 'Warlock',
+  },
+  {
+    id: 'warlock-female',
+    label: 'Warlock (Female)',
+    url: warlockFemalePortrait,
+    category: 'Arcane',
+    gender: 'female',
+    classMatch: 'Warlock',
+  },
+
+  // Barbarian
+  {
+    id: 'barbarian-male',
+    label: 'Barbarian (Male)',
+    url: barbarianMalePortrait,
+    category: 'Martial',
+    gender: 'male',
+    classMatch: 'Barbarian',
+  },
+  {
+    id: 'barbarian-female',
+    label: 'Barbarian (Female)',
+    url: barbarianFemalePortrait,
+    category: 'Martial',
+    gender: 'female',
+    classMatch: 'Barbarian',
+  },
+
+  // Bard
+  {
+    id: 'bard-male',
+    label: 'Bard (Male)',
+    url: bardMalePortrait,
+    category: 'Arcane',
+    gender: 'male',
+    classMatch: 'Bard',
+  },
+  {
+    id: 'bard-female',
+    label: 'Bard (Female)',
+    url: bardFemalePortrait,
+    category: 'Arcane',
+    gender: 'female',
+    classMatch: 'Bard',
+  },
+
+  // Generic Adventurer
+  {
+    id: 'adventurer-male',
+    label: 'Adventurer (Male)',
+    url: adventurerMalePortrait,
+    category: 'Adventurer',
+    gender: 'male',
+    classMatch: 'Adventurer',
+  },
+  {
+    id: 'adventurer-female',
+    label: 'Adventurer (Female)',
+    url: adventurerFemalePortrait,
+    category: 'Adventurer',
+    gender: 'female',
+    classMatch: 'Adventurer',
   },
 ];
 
 /**
- * Auto-generates a high-quality character profile picture based on race, class, and name seed.
+ * Auto-generates a clean, classic fantasy character profile picture based on race, class, name, and gender.
  */
 export function getAutoGeneratedPortrait(
   race: Race,
@@ -70,20 +202,36 @@ export function getAutoGeneratedPortrait(
   name: string = 'Hero',
   gender?: Gender
 ): string {
-  // If matching our primary generated image assets
-  if (['Fighter', 'Paladin', 'Barbarian'].includes(characterClass)) {
-    return fighterPortrait;
-  }
-  if (['Wizard', 'Sorcerer', 'Warlock', 'Cleric'].includes(characterClass)) {
-    return wizardPortrait;
-  }
-  if (['Rogue', 'Ranger', 'Monk', 'Bard', 'Druid'].includes(characterClass)) {
-    return roguePortrait;
-  }
+  const isFemale = gender === 'Female';
 
-  // Fallback seed URL (512x512 px)
-  const seed = encodeURIComponent(`${race}-${characterClass}-${gender || 'hero'}-${name}`);
-  return `https://picsum.photos/seed/${seed}/512/512`;
+  switch (characterClass) {
+    case 'Fighter':
+      return isFemale ? fighterFemalePortrait : fighterMalePortrait;
+    case 'Paladin':
+      return isFemale ? fighterFemalePortrait : fighterMalePortrait;
+    case 'Barbarian':
+      return isFemale ? barbarianFemalePortrait : barbarianMalePortrait;
+    case 'Wizard':
+      return isFemale ? wizardFemalePortrait : wizardMalePortrait;
+    case 'Sorcerer':
+      return isFemale ? wizardFemalePortrait : wizardMalePortrait;
+    case 'Warlock':
+      return isFemale ? warlockFemalePortrait : warlockMalePortrait;
+    case 'Cleric':
+      return isFemale ? clericFemalePortrait : clericMalePortrait;
+    case 'Druid':
+      return isFemale ? druidFemalePortrait : druidMalePortrait;
+    case 'Rogue':
+      return isFemale ? rogueFemalePortrait : rogueMalePortrait;
+    case 'Ranger':
+      return isFemale ? rogueFemalePortrait : rogueMalePortrait;
+    case 'Monk':
+      return isFemale ? adventurerFemalePortrait : adventurerMalePortrait;
+    case 'Bard':
+      return isFemale ? bardFemalePortrait : bardMalePortrait;
+    default:
+      return isFemale ? adventurerFemalePortrait : adventurerMalePortrait;
+  }
 }
 
 /**
@@ -130,3 +278,4 @@ export function resizeImageToPortrait(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
