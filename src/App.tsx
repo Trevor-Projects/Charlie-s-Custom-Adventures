@@ -83,6 +83,7 @@ export default function App() {
       const response = await fetch('/api/gemini/generate-adventure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(25000),
         body: JSON.stringify({
           party,
           setting: settingName,
@@ -154,6 +155,7 @@ export default function App() {
       const response = await fetch('/api/gemini/next-turn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(25000),
         body: JSON.stringify({
           worldName: gameState.worldName,
           currentMilestoneIndex: gameState.currentMilestoneIndex,

@@ -29,13 +29,14 @@ if (apiKey) {
   });
 }
 
-// Helper function to call Wikipedia API for article summaries and thumbnails
+// Helper function to call Wikipedia API for article summaries and thumbnails with safe timeout
 async function fetchWikipediaSummary(title: string) {
   try {
     const cleanTitle = encodeURIComponent(title.trim().replace(/ /g, "_"));
     const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${cleanTitle}`;
     const res = await fetch(url, {
       headers: { "User-Agent": "DND5EMythicQuestGenerator/1.0 (contact@example.com)" },
+      signal: AbortSignal.timeout(2500),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -48,17 +49,19 @@ async function fetchWikipediaSummary(title: string) {
       contentUrl: data.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${cleanTitle}`,
     };
   } catch (error) {
-    console.error("Wikipedia fetch error:", error);
+    console.warn(`Wikipedia fetch skipped or timed out for "${title}":`, error);
     return null;
   }
 }
 
-// Helper to search Wikipedia
+// Helper to search Wikipedia with safe timeout
 async function searchWikipedia(query: string) {
   try {
     const cleanQuery = encodeURIComponent(query);
     const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanQuery}&format=json&origin=*&srlimit=5`;
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(3000),
+    });
     if (!res.ok) return [];
     const data = await res.json();
     const results = data?.query?.search || [];
@@ -68,55 +71,10 @@ async function searchWikipedia(query: string) {
       pageid: item.pageid,
     }));
   } catch (error) {
-    console.error("Wikipedia search error:", error);
+    console.warn("Wikipedia search skipped or timed out:", error);
     return [];
   }
 }
-
-// --- API ROUTES ---
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    hasApiKey: !!process.env.GEMINI_API_KEY,
-  });
-});
-
-// Search Wikipedia
-app.get("/api/wikipedia/search", async (req, res) => {
-  const query = (req.query.q as string) || "";
-  if (!query) {
-    return res.json({ results: [] });
-  }
-  const results = await searchWikipedia(query);
-  res.json({ results });
-});
-
-// Fetch Wikipedia summary and main image
-app.get("/api/wikipedia/summary", async (req, res) => {
-  const title = (req.query.title as string) || "";
-  if (!title) {
-    return res.status(400).json({ error: "Title parameter required" });
-  }
-  const summary = await fetchWikipediaSummary(title);
-  if (!summary) {
-    return res.status(404).json({ error: "Article not found" });
-  }
-  res.json(summary);
-});
-
-// Fetch batch Wikipedia inspirations (e.g. for world building)
-app.post("/api/wikipedia/inspirations", async (req, res) => {
-  const { topics } = req.body;
-  if (!Array.isArray(topics)) {
-    return res.status(400).json({ error: "Topics array required" });
-  }
-  const promises = topics.slice(0, 4).map((topic: string) => fetchWikipediaSummary(topic));
-  const results = await Promise.all(promises);
-  const validInspirations = results.filter(Boolean);
-  res.json({ inspirations: validInspirations });
-});
 
 function getPronounsStr(gender?: string) {
   if (gender === 'Male') return 'he/him';
@@ -124,27 +82,173 @@ function getPronounsStr(gender?: string) {
   return 'they/them';
 }
 
+// Robust Procedural Adventure Generator (Fallback when API key is missing, network times out, or Gemini fails)
+function createFallbackAdventure(party: any[], setting?: string, scenarioHook?: string, wikiTopics?: string[]) {
+  const worldName = setting && setting !== 'custom' ? `${setting}` : 'Realm of Aethelgard';
+  const heroNames = (party || []).map((p: any) => p.name).join(', ') || 'The Vanguard';
+  const firstHero = (party && party[0]) || { name: 'Hero', characterClass: 'Fighter', race: 'Human', gender: 'Male' };
+  const pronouns = getPronounsStr(firstHero.gender);
+
+  return {
+    worldName: worldName,
+    worldSummary: `A sprawling, high-magic realm where ancient empires, celestial ley lines, and forgotten ruins converge under the watchful eyes of legendary factions.`,
+    historicalInspirations: (wikiTopics && wikiTopics.length > 0 ? wikiTopics : ['Silk Road trade routes', 'Byzantine fortifications', 'Celtic hillforts']).map((t: string) => ({
+      topic: t,
+      relevance: `Influences the grand architecture, trading outposts, and tactical fortification styles across ${worldName}.`
+    })),
+    milestones: [
+      { chapter: 1, title: "The Inciting Discovery", description: scenarioHook || "Investigate the ominous omen and secure the outer frontier.", completed: false },
+      { chapter: 2, title: "The Deepening Shadow", description: "Uncover the conspiracy within the ancient subterranean vaults.", completed: false },
+      { chapter: 3, title: "The Turning Point", description: "Reclaim the lost artifact and rally the realm's allied defenders.", completed: false },
+      { chapter: 4, title: "The Final Confrontation", description: "Confront the primeval arch-nemesis at the epicenter of power.", completed: false }
+    ],
+    openingScene: `The wind howls across the mist-shrouded frontier of ${worldName}. The company of ${heroNames} gathers around the war table of the frontier outpost, parchment maps rustling in the chill draft.
+
+${firstHero.name} tightens ${pronouns.split('/')[0] === 'he' ? 'his' : pronouns.split('/')[0] === 'she' ? 'her' : 'their'} grip on ${pronouns.split('/')[0] === 'he' ? 'his' : pronouns.split('/')[0] === 'she' ? 'her' : 'their'} primary armament as scouts arrive with urgent news: ${scenarioHook || "strange rumblings and ancient glyphs have surfaced near the forgotten barrows"}.
+
+Before the party lie several crucial courses of action. Every choice will test your tactical prowess, knowledge, and resolve in the trials ahead.`,
+    activePlayerIndex: 0,
+    choices: [
+      {
+        id: "choice_1",
+        text: `Scout ahead through the dense tree-line to identify enemy patrol tracks [Survival / Stealth]`,
+        statReq: "wis",
+        skillName: "Survival",
+        dc: 12
+      },
+      {
+        id: "choice_2",
+        text: `Decipher the ancient runic carvings etched into the stone archway [Arcana]`,
+        statReq: "int",
+        skillName: "Arcana",
+        dc: 13
+      },
+      {
+        id: "choice_3",
+        text: `Interrogate the frontier scout for strategic weaknesses in the ruins [Insight / Persuasion]`,
+        statReq: "cha",
+        skillName: "Insight",
+        dc: 11
+      },
+      {
+        id: "choice_4",
+        text: `Draw weapons, form a battle vanguard, and march directly into the breaches [Initiative / Combat]`,
+        statReq: "str",
+        skillName: "Athletics",
+        dc: 12
+      }
+    ],
+    wikiSearchKeywords: (wikiTopics && wikiTopics.length > 0 ? wikiTopics.slice(0, 2) : ["Byzantine architecture", "Ancient Silk Road"])
+  };
+}
+
+// Robust Procedural Next Turn Generator (Fallback when API key is missing, network times out, or Gemini fails)
+function createFallbackTurn(
+  worldName: string,
+  currentMilestone: any,
+  party: any[],
+  activePlayerIndex: number,
+  actionChosen: string,
+  diceRoll?: any
+) {
+  const activePlayer = party[activePlayerIndex] || party[0] || { name: 'The Hero', characterClass: 'Fighter', race: 'Human', gender: 'Male' };
+  const nextPlayerIdx = (activePlayerIndex + 1) % Math.max(1, party.length);
+  const nextPlayer = party[nextPlayerIdx] || activePlayer;
+  const isSuccess = diceRoll ? diceRoll.isSuccess : true;
+  const isCrit = diceRoll ? diceRoll.isCrit : false;
+  const isFail = diceRoll ? diceRoll.isFail : false;
+  const pronouns = getPronounsStr(activePlayer.gender);
+  const subjectPronoun = pronouns.split('/')[0];
+  const possessive = subjectPronoun === 'he' ? 'his' : subjectPronoun === 'she' ? 'her' : 'their';
+
+  let outcomeText = "";
+  if (isCrit) {
+    outcomeText = `With spectacular precision and a natural 20, ${activePlayer.name} executes "${actionChosen}" flawlessly! The party gains critical momentum, inspiring all nearby allies.`;
+  } else if (isSuccess) {
+    outcomeText = `${activePlayer.name} successfully resolves ${possessive} action: "${actionChosen}". Through sharp reflexes and disciplined training, ${subjectPronoun} achieves the intended objective without complication.`;
+  } else if (isFail) {
+    outcomeText = `With a critical stumble, ${activePlayer.name}'s attempt at "${actionChosen}" triggers unexpected resistance! The environment shifts against the heroes, testing their endurance.`;
+  } else {
+    outcomeText = `${activePlayer.name} falters while attempting "${actionChosen}", encountering stiff resistance. The party must recalibrate their tactical approach to bypass the obstacle.`;
+  }
+
+  const narrative = `${outcomeText}
+
+The echoes settle through the corridors of ${worldName}. As ${activePlayer.name} steps back into the formation, the immediate area reveals fresh tactical possibilities. 
+
+All eyes now turn to ${nextPlayer.name} (${nextPlayer.characterClass}) to dictate the company's next movement.`;
+
+  return {
+    narrative,
+    activePlayerIndex: nextPlayerIdx,
+    milestoneCompleted: isCrit,
+    hpChanges: !isSuccess && !isFail ? [{ playerIndex: activePlayerIndex, deltaHp: -2, reason: "Minor environmental hazard" }] : [],
+    itemsGained: isCrit ? ["Ancient Sunstone Amulet", "Elixir of Vitality"] : isSuccess ? ["Restorative Herbal Poultice"] : [],
+    isCombat: isFail,
+    combatEncounter: isFail ? {
+      enemyName: "Shadow Vanguard Stalker",
+      enemyHp: 18,
+      maxEnemyHp: 18,
+      enemyAc: 12,
+      enemyAttackBonus: 3,
+      enemyDamage: "1d6+2 Slashing",
+      description: "A prowling armored sentinel awakened by the sudden disturbance."
+    } : null,
+    choices: [
+      {
+        id: "choice_next_1",
+        text: `Advance carefully toward the illuminated inner sanctum [Perception DC 12]`,
+        statReq: "wis",
+        skillName: "Perception",
+        dc: 12
+      },
+      {
+        id: "choice_next_2",
+        text: `Barricade the rear passage and establish a defensive perimeter [Athletics DC 13]`,
+        statReq: "str",
+        skillName: "Athletics",
+        dc: 13
+      },
+      {
+        id: "choice_next_3",
+        text: `Channel arcane senses to detect magical wards and hidden triggers [Arcana DC 12]`,
+        statReq: "int",
+        skillName: "Arcana",
+        dc: 12
+      },
+      {
+        id: "choice_next_4",
+        text: `Quietly search the alcoves for forgotten supply caches [Stealth / Investigation DC 11]`,
+        statReq: "dex",
+        skillName: "Stealth",
+        dc: 11
+      }
+    ],
+    wikiSearchKeywords: ["Medieval fortification", "Ancient citadel"]
+  };
+}
+
 // Generate Adventure / Campaign Opening
 app.post("/api/gemini/generate-adventure", async (req, res) => {
+  const {
+    party, // Array of 1-4 characters
+    setting, // Setting preset or custom name
+    scenarioHook, // Initial starting hook choice
+    wikiTopics, // Selected Wikipedia inspiration topics
+    customNotes,
+  } = req.body;
+
   try {
     if (!ai) {
-      return res.status(500).json({
-        error: "GEMINI_API_KEY is not configured in environment variables.",
-      });
+      console.warn("GEMINI_API_KEY missing - generating high quality procedural adventure fallback.");
+      const fallback = createFallbackAdventure(party, setting, scenarioHook, wikiTopics);
+      return res.json(fallback);
     }
 
-    const {
-      party, // Array of 1-3 characters
-      setting, // Setting preset or custom name
-      scenarioHook, // Initial starting hook choice
-      wikiTopics, // Selected Wikipedia inspiration topics
-      customNotes,
-    } = req.body;
-
-    const partySummary = party
+    const partySummary = (party || [])
       .map(
         (p: any, i: number) =>
-          `Player ${i + 1} (${p.playerName}): ${p.name}, Gender: ${p.gender || "I'd rather not say"} (Pronouns: ${getPronounsStr(p.gender)}), ${p.race} ${p.characterClass} (Level 1, HP: ${p.hp}/${p.maxHp}, AC: ${p.ac}, STR ${p.stats.str}, DEX ${p.stats.dex}, CON ${p.stats.con}, INT ${p.stats.int}, WIS ${p.stats.wis}, CHA ${p.stats.cha}) - Backstory: ${p.backstory || "Eager for adventure"}`
+          `Player ${i + 1} (${p.playerName}): ${p.name}, Gender: ${p.gender || "I'd rather not say"} (Pronouns: ${getPronounsStr(p.gender)}), ${p.race} ${p.characterClass} (Level 1, HP: ${p.hp}/${p.maxHp}, AC: ${p.ac}, STR ${p.stats?.str || 10}, DEX ${p.stats?.dex || 10}, CON ${p.stats?.con || 10}, INT ${p.stats?.int || 10}, WIS ${p.stats?.wis || 10}, CHA ${p.stats?.cha || 10}) - Backstory: ${p.backstory || "Eager for adventure"}`
       )
       .join("\n");
 
@@ -200,7 +304,7 @@ Format your response strictly as JSON with this schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -268,7 +372,7 @@ Format your response strictly as JSON with this schema:
     const jsonText = response.text || "{}";
     const data = JSON.parse(jsonText);
 
-    // Automatically fetch real Wikipedia thumbnails for the search keywords
+    // Automatically fetch real Wikipedia thumbnails with safe timeouts
     const keywords = data.wikiSearchKeywords || [];
     const wikiCardPromises = keywords.slice(0, 3).map((kw: string) => fetchWikipediaSummary(kw));
     const wikiCards = (await Promise.all(wikiCardPromises)).filter(Boolean);
@@ -278,35 +382,37 @@ Format your response strictly as JSON with this schema:
       wikiCards,
     });
   } catch (error: any) {
-    console.error("Error generating adventure:", error);
-    res.status(500).json({ error: error.message || "Failed to generate adventure." });
+    console.warn("AI generation failed or timed out, activating procedural adventure fallback:", error?.message || error);
+    const fallback = createFallbackAdventure(party, setting, scenarioHook, wikiTopics);
+    res.json(fallback);
   }
 });
 
 // Process Turn / Player Action
 app.post("/api/gemini/next-turn", async (req, res) => {
+  const {
+    worldName,
+    currentMilestoneIndex,
+    milestones,
+    party,
+    activePlayerIndex,
+    actionChosen, // string text or custom action
+    diceRoll, // { stat: 'str', skill: 'Athletics', d20: 15, modifier: 3, total: 18, dc: 14, isSuccess: true, isCrit: false, isFail: false }
+    historySummary, // last few turn narrative snippets
+  } = req.body;
+
+  const currentMilestone = (milestones && milestones[currentMilestoneIndex]) || { chapter: 1, title: "Quest", description: "Advance" };
+
   try {
     if (!ai) {
-      return res.status(500).json({
-        error: "GEMINI_API_KEY is not configured in environment variables.",
-      });
+      console.warn("GEMINI_API_KEY missing - running procedural turn fallback.");
+      const fallback = createFallbackTurn(worldName, currentMilestone, party || [], activePlayerIndex || 0, actionChosen || "Investigates", diceRoll);
+      return res.json(fallback);
     }
 
-    const {
-      worldName,
-      currentMilestoneIndex,
-      milestones,
-      party,
-      activePlayerIndex,
-      actionChosen, // string text or custom action
-      diceRoll, // { stat: 'str', skill: 'Athletics', d20: 15, modifier: 3, total: 18, dc: 14, isSuccess: true, isCrit: false, isFail: false }
-      historySummary, // last few turn narrative snippets
-    } = req.body;
+    const activePlayer = (party && party[activePlayerIndex]) || (party && party[0]) || { name: "Hero", characterClass: "Fighter", race: "Human", gender: "Male" };
 
-    const activePlayer = party[activePlayerIndex] || party[0];
-    const currentMilestone = milestones[currentMilestoneIndex] || milestones[0];
-
-    const partyState = party
+    const partyState = (party || [])
       .map(
         (p: any, i: number) =>
           `P${i + 1} (${p.playerName}): ${p.name} (${p.race} ${p.characterClass}, Gender: ${p.gender || "I'd rather not say"}, Pronouns: ${getPronounsStr(p.gender)}) - HP: ${p.hp}/${p.maxHp}, Spell Slots: ${p.spellSlots ?? 0}/${p.maxSpellSlots ?? 0}, Status Effects: ${
@@ -318,7 +424,7 @@ app.post("/api/gemini/next-turn", async (req, res) => {
     const prompt = `You are a D&D 5th Edition Dungeon Master managing an ongoing adventure in world: "${worldName}".
 CURRENT CHAPTER / MILESTONE: Chapter ${currentMilestone.chapter}: "${currentMilestone.title}" - Goal: ${currentMilestone.description}
 PARTY STATUS: ${partyState}
-ACTING PLAYER: ${activePlayer.name} (${activePlayer.race} ${activePlayer.characterClass}, Player ${activePlayerIndex + 1}, Gender: ${activePlayer.gender || "I'd rather not say"}, Pronouns: ${getPronounsStr(activePlayer.gender)})
+ACTING PLAYER: ${activePlayer.name} (${activePlayer.race} ${activePlayer.characterClass}, Player ${(activePlayerIndex || 0) + 1}, Gender: ${activePlayer.gender || "I'd rather not say"}, Pronouns: ${getPronounsStr(activePlayer.gender)})
 
 PLAYER ACTION TAKEN: "${actionChosen}"
 ${
@@ -341,7 +447,7 @@ Tasks:
 2. Determine if this turn advances or completes the current campaign milestone (set 'milestoneCompleted: true' if this chapter's objective was achieved!).
 3. Update party HP, spell slots, inventory, or temporary status effects (such as 'Poisoned', 'Stunned', 'Inspired', 'Blessed', 'Charmed', 'Blinded', 'Frightened', 'Restrained', 'Hasted', 'Shielded').
 4. Check if a Combat Encounter should begin. If yes, set 'isCombat: true' and populate monster details (name, hp, ac, attacks).
-5. Pass turn to the next player (activePlayerIndex should cycle between 0 and ${party.length - 1}).
+5. Pass turn to the next player (activePlayerIndex should cycle between 0 and ${(party?.length || 1) - 1}).
 6. Generate 3 to 4 distinct choice options for the next acting player.
 7. Provide 1-2 Wikipedia search terms for cultural, architectural, or historical imagery inspired by this scene.
 
@@ -380,7 +486,7 @@ Return strictly JSON matching this schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -450,7 +556,7 @@ Return strictly JSON matching this schema:
     const jsonText = response.text || "{}";
     const data = JSON.parse(jsonText);
 
-    // Fetch Wikipedia thumbnails
+    // Fetch Wikipedia thumbnails safely
     const keywords = data.wikiSearchKeywords || [];
     const wikiCardPromises = keywords.slice(0, 2).map((kw: string) => fetchWikipediaSummary(kw));
     const wikiCards = (await Promise.all(wikiCardPromises)).filter(Boolean);
@@ -460,8 +566,9 @@ Return strictly JSON matching this schema:
       wikiCards,
     });
   } catch (error: any) {
-    console.error("Error processing next turn:", error);
-    res.status(500).json({ error: error.message || "Failed to process turn." });
+    console.warn("Turn AI processing failed, activating procedural turn outcome fallback:", error?.message || error);
+    const fallback = createFallbackTurn(worldName, currentMilestone, party || [], activePlayerIndex || 0, actionChosen || "Moves forward", diceRoll);
+    res.json(fallback);
   }
 });
 
@@ -474,14 +581,14 @@ app.post("/api/summarize-journal", async (req, res) => {
 
     const { worldName, worldSummary, party, history, milestones } = req.body;
 
-    const historySummary = history
+    const historySummary = (history || [])
       .map(
         (t: any, i: number) =>
           `[Turn ${i + 1} - ${t.activePlayerName || "Party"}] Action: ${t.actionText || "Initiated"}. Narrative: ${t.narrative}`
       )
       .join("\n\n");
 
-    const partySummary = party
+    const partySummary = (party || [])
       .map((p: any) => `${p.name} (${p.race} ${p.characterClass})`)
       .join(", ");
 
@@ -518,7 +625,7 @@ Format your response strictly as JSON with this schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -614,7 +721,7 @@ Format your response strictly as JSON with this schema:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.7-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
